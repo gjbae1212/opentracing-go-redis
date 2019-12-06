@@ -7,7 +7,7 @@
 </p>
 
 ## OVERVIEW
-[OpenTracing](http://opentracing.io/) before and after hook for [go-redis/v7](https://github.com/go-redis/redis).
+[OpenTracing](http://opentracing.io/) before and after hook for [go-redis v7](https://github.com/go-redis/redis).
 It's to support **redis.Client**, **redis.ClusterClient**, **redis.Ring**.
 
 ## HOW TO USE
