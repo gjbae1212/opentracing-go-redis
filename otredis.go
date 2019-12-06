@@ -19,8 +19,9 @@ type redisClient struct {
 
 // WithContext is to inject context and to add hook.
 func (rc *redisClient) WithContext(ctx context.Context) UniversalClient {
+	opts := rc.Client.Options()
 	rc.Client = rc.Client.WithContext(ctx)
-	rc.AddHook(hook{addrs: []string{rc.Client.Options().Addr}})
+	rc.AddHook(hook{addrs: []string{opts.Addr}, database: opts.DB})
 	return rc
 }
 
@@ -31,7 +32,7 @@ type redisClusterClient struct {
 // WithContext is to inject context and to add hook.
 func (rc *redisClusterClient) WithContext(ctx context.Context) UniversalClient {
 	rc.ClusterClient = rc.ClusterClient.WithContext(ctx)
-	rc.AddHook(hook{addrs: rc.ClusterClient.Options().Addrs})
+	rc.AddHook(hook{addrs: rc.ClusterClient.Options().Addrs, database: 0})
 	return rc
 }
 
@@ -41,14 +42,15 @@ type redisRing struct {
 
 // WithContext is to inject context and to add hook.
 func (rc *redisRing) WithContext(ctx context.Context) UniversalClient {
+	opts := rc.Ring.Options()
 	rc.Ring = rc.Ring.WithContext(ctx)
-	addrs := make([]string, len(rc.Ring.Options().Addrs))
+	addrs := make([]string, len(opts.Addrs))
 	i := 0
-	for _, v := range rc.Ring.Options().Addrs {
+	for _, v := range opts.Addrs {
 		addrs[i] = v
 		i += 1
 	}
-	rc.AddHook(hook{addrs: addrs})
+	rc.AddHook(hook{addrs: addrs, database: opts.DB})
 	return rc
 }
 
