@@ -9,8 +9,9 @@ import (
 type UniversalClient interface {
 	redis.UniversalClient
 
-	// WithContext is to inject context and to add hook.
-	WithContext(ctx context.Context) UniversalClient
+	// withContext is to inject context and to add hook.
+	// it is an internal method.
+	withContext(ctx context.Context) UniversalClient
 }
 
 type redisClient struct {
@@ -18,7 +19,7 @@ type redisClient struct {
 }
 
 // WithContext is to inject context and to add hook.
-func (rc *redisClient) WithContext(ctx context.Context) UniversalClient {
+func (rc *redisClient) withContext(ctx context.Context) UniversalClient {
 	opts := rc.Client.Options()
 	rc.Client = rc.Client.WithContext(ctx)
 	rc.AddHook(hook{addrs: []string{opts.Addr}, database: opts.DB})
@@ -30,7 +31,7 @@ type redisClusterClient struct {
 }
 
 // WithContext is to inject context and to add hook.
-func (rc *redisClusterClient) WithContext(ctx context.Context) UniversalClient {
+func (rc *redisClusterClient) withContext(ctx context.Context) UniversalClient {
 	rc.ClusterClient = rc.ClusterClient.WithContext(ctx)
 	rc.AddHook(hook{addrs: rc.ClusterClient.Options().Addrs, database: 0})
 	return rc
@@ -41,7 +42,7 @@ type redisRing struct {
 }
 
 // WithContext is to inject context and to add hook.
-func (rc *redisRing) WithContext(ctx context.Context) UniversalClient {
+func (rc *redisRing) withContext(ctx context.Context) UniversalClient {
 	opts := rc.Ring.Options()
 	rc.Ring = rc.Ring.WithContext(ctx)
 	addrs := make([]string, len(opts.Addrs))
@@ -71,6 +72,6 @@ func WrapClient(ctx context.Context, client redis.UniversalClient) (UniversalCli
 		return nil, fmt.Errorf("[err] WrapClient not support client")
 	}
 
-	wrapClient = wrapClient.WithContext(ctx)
+	wrapClient = wrapClient.withContext(ctx)
 	return wrapClient, nil
 }

@@ -70,7 +70,7 @@ func TestWithContext(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			wrap, err := WrapClient(tc.ctx, tc.client)
 			assert.NoError(err)
-			equal := wrap.WithContext(tc.ctx)
+			equal := wrap.withContext(tc.ctx)
 			assert.Equal(wrap, equal)
 		})
 	}
