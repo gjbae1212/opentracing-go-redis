@@ -3,6 +3,7 @@ package otredis
 import (
 	"context"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/opentracing/opentracing-go/log"
 	"strconv"
 	"strings"
 
@@ -33,6 +34,11 @@ func (h hook) BeforeProcess(ctx context.Context, cmd redis.Cmder) (context.Conte
 func (h hook) AfterProcess(ctx context.Context, cmd redis.Cmder) error {
 	span := opentracing.SpanFromContext(ctx)
 	if span != nil {
+		// if context is raised an error.
+		if ctx.Err() != nil {
+			ext.Error.Set(span, true)
+			span.LogFields(log.Error(ctx.Err()))
+		}
 		span.Finish()
 	}
 	return nil
@@ -58,6 +64,11 @@ func (h hook) BeforeProcessPipeline(ctx context.Context, cmds []redis.Cmder) (co
 func (h hook) AfterProcessPipeline(ctx context.Context, cmds []redis.Cmder) error {
 	span := opentracing.SpanFromContext(ctx)
 	if span != nil {
+		// if context is raised an error.
+		if ctx.Err() != nil {
+			ext.Error.Set(span, true)
+			span.LogFields(log.Error(ctx.Err()))
+		}
 		span.Finish()
 	}
 	return nil

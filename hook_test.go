@@ -61,11 +61,21 @@ func TestHook_AfterProcess(t *testing.T) {
 	assert := assert.New(t)
 	opentracing.SetGlobalTracer(mocktracer.New())
 
+	failCtx, failCancel := context.WithCancel(context.Background())
+	failCancel()
+
 	tests := map[string]struct {
-		ctx context.Context
-		hk  hook
-		cmd redis.Cmder
+		ctx    context.Context
+		hk     hook
+		cmd    redis.Cmder
+		ctxErr error
 	}{
+		"fail": {
+			ctx:    failCtx,
+			hk:     hook{addrs: []string{"127.0.0.1:6379", "127.0.0.1:6378"}, database: 10},
+			cmd:    redis.NewStringCmd("GET", "ALLAN"),
+			ctxErr: context.Canceled,
+		},
 		"success": {
 			ctx: context.TODO(),
 			hk:  hook{addrs: []string{"127.0.0.1:6379", "127.0.0.1:6378"}, database: 10},
@@ -86,6 +96,14 @@ func TestHook_AfterProcess(t *testing.T) {
 			assert.NoError(err)
 			span := opentracing.SpanFromContext(newCtx).(*mocktracer.MockSpan)
 			assert.True(span.FinishTime.UnixNano() > now.UnixNano())
+			if tc.ctxErr != nil {
+				records := span.Logs()
+				assert.Len(records, 1)
+				assert.Len(records[0].Fields, 1)
+				field := records[0].Fields[0]
+				assert.Equal("error", field.Key)
+				assert.Equal(tc.ctxErr.Error(), field.ValueString)
+			}
 		})
 	}
 }
@@ -138,11 +156,21 @@ func TestHook_AfterProcessPipeline(t *testing.T) {
 	assert := assert.New(t)
 	opentracing.SetGlobalTracer(mocktracer.New())
 
+	failCtx, failCancel := context.WithCancel(context.Background())
+	failCancel()
+
 	tests := map[string]struct {
-		ctx  context.Context
-		hk   hook
-		cmds []redis.Cmder
+		ctx    context.Context
+		hk     hook
+		cmds   []redis.Cmder
+		ctxErr error
 	}{
+		"fail": {
+			ctx:    failCtx,
+			hk:     hook{addrs: []string{"127.0.0.1:6379", "127.0.0.1:6378"}, database: 10},
+			cmds:   []redis.Cmder{redis.NewStringCmd("GET", "ALLAN"), redis.NewStringCmd("SET", "ALLAN")},
+			ctxErr: context.Canceled,
+		},
 		"success": {
 			ctx:  context.TODO(),
 			hk:   hook{addrs: []string{"127.0.0.1:6379", "127.0.0.1:6378"}, database: 10},
@@ -164,6 +192,14 @@ func TestHook_AfterProcessPipeline(t *testing.T) {
 			assert.NoError(err)
 			span := opentracing.SpanFromContext(newCtx).(*mocktracer.MockSpan)
 			assert.True(span.FinishTime.UnixNano() > now.UnixNano())
+			if tc.ctxErr != nil {
+				records := span.Logs()
+				assert.Len(records, 1)
+				assert.Len(records[0].Fields, 1)
+				field := records[0].Fields[0]
+				assert.Equal("error", field.Key)
+				assert.Equal(tc.ctxErr.Error(), field.ValueString)
+			}
 		})
 	}
 
